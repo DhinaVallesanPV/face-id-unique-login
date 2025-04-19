@@ -46,6 +46,7 @@
     "crypto-js": "^4.2.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
+    "ethers": "^6.13.5",
     "face-api.js": "^0.22.2",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
