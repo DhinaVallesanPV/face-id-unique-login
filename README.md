@@ -1,73 +1,50 @@
-# Welcome to your Lovable project
 
-## Project info
+# Face ID Authentication System
 
-**URL**: https://lovable.dev/projects/df08219a-96c8-44b0-910a-9c429c5b5c3d
+This application demonstrates a secure facial recognition authentication system that prevents duplicate account creation by the same person.
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **Face ID Registration**: Create a new account using your face as a biometric identifier
+- **Duplicate Prevention**: System prevents the same person from creating multiple accounts
+- **Secure Login**: Login using your face without passwords
+- **Clean UI**: Modern, responsive interface built with React and Tailwind CSS
 
-**Use Lovable**
+## How It Works
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/df08219a-96c8-44b0-910a-9c429c5b5c3d) and start prompting.
+1. **Registration**:
+   - User provides their name and email
+   - The system captures their facial features and creates a unique facial descriptor
+   - Before registration is complete, the system checks if the face already exists in the database
+   - If a match is found, registration is blocked with an "User already exists" message
+   - If no match is found, the account is created successfully
 
-Changes made via Lovable will be committed automatically to this repo.
+2. **Login**:
+   - User simply shows their face to the camera
+   - The system compares the captured facial descriptor with stored user data
+   - If a match is found, the user is granted access to their dashboard
+   - If no match is found, access is denied
 
-**Use your preferred IDE**
+3. **Security**:
+   - Facial matching uses euclidean distance calculations with a threshold of 0.5
+   - Face recognition happens entirely client-side for privacy
+   - No actual images of faces are stored, only mathematical descriptors
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Technical Implementation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Built with React, TypeScript, and Tailwind CSS
+- Uses face-api.js for facial recognition capabilities
+- Implements client-side storage (localStorage) for demo purposes
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository
+2. Run `npm install` to install dependencies
+3. Run `npm run dev` to start the development server
+4. Models will be loaded automatically from the public/models folder on first use
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Important Notes
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/df08219a-96c8-44b0-910a-9c429c5b5c3d) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- This implementation uses browser localStorage for demonstration purposes only
+- In a production environment, facial descriptors should be stored securely on a server
+- The threshold for face matching (0.5) can be adjusted for more strict or lenient matching
