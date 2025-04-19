@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import FaceCapture from "@/components/FaceCapture";
+import { registerUserOnBlockchain, checkUserExistsByEmail, hashFaceDescriptor } from "@/utils/web3Service";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -15,6 +16,7 @@ const Register = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(null);
   const [loading, setLoading] = useState(false);
+  const [connectingBlockchain, setConnectingBlockchain] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -40,7 +42,23 @@ const Register = () => {
     setLoading(true);
     
     try {
-      // Check for existing user with same face
+      setConnectingBlockchain(true);
+      
+      // Check if user with email already exists on blockchain
+      const userExists = await checkUserExistsByEmail(email);
+      
+      if (userExists) {
+        toast({
+          variant: "destructive",
+          title: "User already exists",
+          description: "A user with this email is already registered. Please login instead.",
+        });
+        setLoading(false);
+        setConnectingBlockchain(false);
+        return;
+      }
+      
+      // Check for existing user with same face in local storage (fallback)
       const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
       
       const isFaceAlreadyRegistered = existingUsers.some((user: any) => {
@@ -63,15 +81,21 @@ const Register = () => {
           description: "A user with this face is already registered. Please login instead.",
         });
         setLoading(false);
+        setConnectingBlockchain(false);
         return;
       }
       
-      // Store user with face descriptor
+      // Register user on blockchain
+      await registerUserOnBlockchain(email, faceDescriptor);
+      
+      // Also store in localStorage as fallback (for demo purposes)
+      const faceHash = hashFaceDescriptor(faceDescriptor);
       const newUser = {
         id: Date.now().toString(),
         name,
         email,
-        faceDescriptor: Object.assign({}, faceDescriptor)
+        faceDescriptor: Object.assign({}, faceDescriptor),
+        faceHash
       };
       
       existingUsers.push(newUser);
@@ -79,7 +103,7 @@ const Register = () => {
       
       toast({
         title: "Registration successful",
-        description: "Your account has been created successfully.",
+        description: "Your account has been created and verified on the blockchain.",
       });
       
       navigate("/login");
@@ -92,6 +116,7 @@ const Register = () => {
       });
     } finally {
       setLoading(false);
+      setConnectingBlockchain(false);
     }
   };
   
@@ -100,7 +125,7 @@ const Register = () => {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-          <CardDescription className="text-center">Register with your face ID</CardDescription>
+          <CardDescription className="text-center">Register with your face ID on blockchain</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -165,7 +190,14 @@ const Register = () => {
             onClick={handleRegister}
             disabled={loading}
           >
-            {loading ? "Processing..." : "Register"}
+            {loading ? (
+              <div className="flex items-center">
+                <span className="mr-2">
+                  {connectingBlockchain ? "Connecting to blockchain..." : "Processing..."}
+                </span>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              </div>
+            ) : "Register on Blockchain"}
           </Button>
           <p className="text-sm text-center">
             Already have an account?{" "}
