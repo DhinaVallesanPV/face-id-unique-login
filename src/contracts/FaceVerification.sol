@@ -14,7 +14,7 @@ contract FaceVerification {
     event UserVerified(address indexed userAddress, bool success);
     
     // Register a new user with their face hash
-    function registerUser(string memory email, string memory faceHash) public {
+    function registerUser(string calldata email, string calldata faceHash) public {
         require(bytes(userFaceHashes[msg.sender]).length == 0, "User already registered");
         require(emailToAddress[email] == address(0), "Email already registered");
         
@@ -25,18 +25,21 @@ contract FaceVerification {
     }
     
     // Verify a user's face hash
-    function verifyUser(string memory faceHash) public view returns (bool) {
-        return keccak256(abi.encodePacked(userFaceHashes[msg.sender])) == 
+    function verifyUser(string calldata faceHash) public view returns (bool) {
+        string memory storedHash = userFaceHashes[msg.sender];
+        
+        // Compare hashes using keccak256
+        return keccak256(abi.encodePacked(storedHash)) == 
                keccak256(abi.encodePacked(faceHash));
     }
     
     // Get user address by email (for login process)
-    function getUserAddressByEmail(string memory email) public view returns (address) {
+    function getUserAddressByEmail(string calldata email) public view returns (address) {
         return emailToAddress[email];
     }
     
     // Check if a user exists
-    function userExists(string memory email) public view returns (bool) {
+    function userExists(string calldata email) public view returns (bool) {
         return emailToAddress[email] != address(0);
     }
 }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { initWeb3 } from "@/utils/web3Service";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { ExternalLink } from "lucide-react";
 
 const BlockchainStatus = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -31,6 +32,16 @@ const BlockchainStatus = () => {
       const network = await provider.getNetwork();
       setNetworkName(network.name);
       
+      // Check if on Sepolia network
+      if (network.chainId !== 11155111n) {
+        toast({
+          variant: "destructive",
+          title: "Wrong network",
+          description: "Please switch to Sepolia testnet in MetaMask",
+        });
+        return;
+      }
+      
       setIsConnected(true);
       
       toast({
@@ -49,6 +60,10 @@ const BlockchainStatus = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFaucetEth = () => {
+    window.open("https://sepoliafaucet.com/", "_blank");
   };
 
   useEffect(() => {
@@ -89,6 +104,14 @@ const BlockchainStatus = () => {
           <p className="text-xs text-gray-500 truncate max-w-[200px]">
             {walletAddress}
           </p>
+          <Button 
+            size="sm" 
+            variant="outline"
+            className="mt-2 text-xs w-full flex items-center justify-center gap-1"
+            onClick={getFaucetEth}
+          >
+            Get Test ETH <ExternalLink size={12} />
+          </Button>
         </div>
       )}
       
@@ -104,7 +127,7 @@ const BlockchainStatus = () => {
               <div className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent"></div>
               <span>Connecting...</span>
             </div>
-          ) : 'Connect Wallet'}
+          ) : 'Connect to Sepolia'}
         </Button>
       )}
     </div>
