@@ -17,6 +17,7 @@ const Register = () => {
   const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(null);
   const [loading, setLoading] = useState(false);
   const [connectingBlockchain, setConnectingBlockchain] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -85,25 +86,47 @@ const Register = () => {
         return;
       }
       
-      // Register user on blockchain
-      await registerUserOnBlockchain(email, faceDescriptor);
-      
-      // Also store in localStorage as fallback (for demo purposes)
-      const faceHash = hashFaceDescriptor(faceDescriptor);
-      const newUser = {
-        id: Date.now().toString(),
-        name,
-        email,
-        faceDescriptor: Object.assign({}, faceDescriptor),
-        faceHash
-      };
-      
-      existingUsers.push(newUser);
-      localStorage.setItem('users', JSON.stringify(existingUsers));
+      try {
+        // Register user on blockchain
+        await registerUserOnBlockchain(email, faceDescriptor);
+      } catch (error: any) {
+        console.error("Blockchain registration error:", error);
+        
+        if (error.message && (
+            error.message.includes("insufficient funds") || 
+            error.message.includes("gas") ||
+            error.message.includes("fee"))) {
+          
+          setUsingFallback(true);
+          
+          toast({
+            variant: "warning",
+            title: "Using local storage fallback",
+            description: "Not enough test ETH for blockchain registration. Using local storage instead for demo purposes.",
+          });
+          
+          // Store locally as fallback
+          const faceHash = hashFaceDescriptor(faceDescriptor);
+          const newUser = {
+            id: Date.now().toString(),
+            name,
+            email,
+            faceDescriptor: Object.assign({}, faceDescriptor),
+            faceHash
+          };
+          
+          existingUsers.push(newUser);
+          localStorage.setItem('users', JSON.stringify(existingUsers));
+        } else {
+          throw error;
+        }
+      }
       
       toast({
         title: "Registration successful",
-        description: "Your account has been created and verified on the blockchain.",
+        description: usingFallback 
+          ? "Your account has been created locally for demo purposes." 
+          : "Your account has been created and verified on the blockchain.",
       });
       
       navigate("/login");
