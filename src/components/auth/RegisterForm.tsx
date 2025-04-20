@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import FaceCapture from "@/components/FaceCapture";
-import { registerUserOnBlockchain, checkUserExistsByEmail } from "@/utils/web3Service";
+import { registerUserOnBlockchain, checkUserExistsByEmail, checkFaceExists } from "@/utils/web3Service";
 
 export const RegisterForm = () => {
   const [name, setName] = useState("");
@@ -16,18 +16,39 @@ export const RegisterForm = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(null);
   const [loading, setLoading] = useState(false);
-  const [connectingBlockchain, setConnectingBlockchain] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const handleCaptureFace = (descriptor: Float32Array) => {
-    setFaceDescriptor(descriptor);
-    setIsCapturing(false);
-    toast({
-      title: "Face captured successfully",
-      description: "Your face has been recorded for registration.",
-    });
+  const handleCaptureFace = async (descriptor: Float32Array) => {
+    try {
+      // Check if this face is already registered to prevent multiple accounts
+      const faceAlreadyExists = await checkFaceExists(descriptor);
+      
+      if (faceAlreadyExists) {
+        toast({
+          variant: "destructive",
+          title: "Face already registered",
+          description: "This face is already registered with an account. Cannot create multiple accounts with the same face.",
+        });
+        return;
+      }
+      
+      setFaceDescriptor(descriptor);
+      setIsCapturing(false);
+      
+      toast({
+        title: "Face captured successfully",
+        description: "Your face has been recorded for registration.",
+      });
+    } catch (error) {
+      console.error("Error during face capture:", error);
+      toast({
+        variant: "destructive",
+        title: "Error capturing face",
+        description: "There was an error checking your face. Please try again.",
+      });
+    }
   };
   
   const handleRegister = async () => {
@@ -43,8 +64,7 @@ export const RegisterForm = () => {
     setLoading(true);
     
     try {
-      setConnectingBlockchain(true);
-      
+      // Check for existing user with the same email
       const userExists = await checkUserExistsByEmail(email);
       
       if (userExists) {
@@ -53,67 +73,57 @@ export const RegisterForm = () => {
           title: "User already exists",
           description: "A user with this email is already registered. Please login instead.",
         });
+        setLoading(false);
         return;
       }
       
-      // Check for existing user with same face in local storage (fallback)
-      const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
+      // Register the user (this now handles all the fallbacks internally)
+      await registerUserOnBlockchain(email, faceDescriptor);
       
-      const isFaceAlreadyRegistered = existingUsers.some((user: any) => {
-        if (!user.faceDescriptor) return false;
-        const storedDescriptor = new Float32Array(Object.values(user.faceDescriptor));
-        const distance = (window as any).faceapi.euclideanDistance(storedDescriptor, faceDescriptor);
-        return distance < 0.5;
-      });
+      // Save additional user information to localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.email === email);
       
-      if (isFaceAlreadyRegistered) {
-        toast({
-          variant: "destructive",
-          title: "User already exists",
-          description: "A user with this face is already registered. Please login instead.",
+      if (userIndex >= 0) {
+        // Update the existing user entry with name
+        users[userIndex].name = name;
+      } else {
+        // This shouldn't happen but just in case
+        users.push({
+          id: Date.now().toString(),
+          name,
+          email,
+          faceDescriptor: Object.assign({}, faceDescriptor)
         });
-        return;
       }
       
-      try {
-        await registerUserOnBlockchain(email, faceDescriptor);
-      } catch (error: any) {
-        console.error("Blockchain registration error:", error);
-        
-        if (error.message && (
-            error.message.includes("insufficient funds") || 
-            error.message.includes("gas") ||
-            error.message.includes("fee"))) {
-          
-          setUsingFallback(true);
-          
-          toast({
-            title: "Using local storage",
-            description: "Not enough test ETH for blockchain registration. Using local storage instead for demo purposes.",
-          });
-        } else {
-          throw error;
-        }
-      }
+      localStorage.setItem('users', JSON.stringify(users));
       
       toast({
         title: "Registration successful",
-        description: usingFallback 
-          ? "Your account has been created locally for demo purposes." 
-          : "Your account has been created and verified on the blockchain.",
+        description: "Your account has been created. You can now login.",
       });
       
       navigate("/login");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: "An error occurred during registration. Please try again.",
-      });
+      
+      // Check if the error is about multiple accounts
+      if (error.message && error.message.includes("already registered")) {
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: error.message || "Cannot create multiple accounts with the same face.",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: "An error occurred during registration. Please try again.",
+        });
+      }
     } finally {
       setLoading(false);
-      setConnectingBlockchain(false);
     }
   };
 
@@ -188,12 +198,10 @@ export const RegisterForm = () => {
         >
           {loading ? (
             <div className="flex items-center">
-              <span className="mr-2">
-                {connectingBlockchain ? "Connecting to blockchain..." : "Processing..."}
-              </span>
+              <span className="mr-2">Processing...</span>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
             </div>
-          ) : "Register on Blockchain"}
+          ) : "Register"}
         </Button>
         <p className="text-sm text-center">
           Already have an account?{" "}

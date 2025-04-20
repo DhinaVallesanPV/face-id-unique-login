@@ -16,37 +16,21 @@ const BlockchainStatus = () => {
     try {
       setLoading(true);
       
-      if (!window.ethereum) {
-        toast({
-          variant: "destructive",
-          title: "MetaMask not found",
-          description: "Please install MetaMask to use blockchain features.",
-        });
-        return;
-      }
-
-      const { provider, signer } = await initWeb3();
-      const address = await signer.getAddress();
+      const { provider, wallet } = await initWeb3();
+      
+      // Get wallet address
+      const address = await wallet.getAddress();
       setWalletAddress(address);
       
+      // Get network information
       const network = await provider.getNetwork();
       setNetworkName(network.name);
-      
-      // Check if on Sepolia network
-      if (network.chainId !== 11155111n) {
-        toast({
-          variant: "destructive",
-          title: "Wrong network",
-          description: "Please switch to Sepolia testnet in MetaMask",
-        });
-        return;
-      }
       
       setIsConnected(true);
       
       toast({
         title: "Blockchain connected",
-        description: `Connected to ${network.name} network`,
+        description: `Connected to ${network.name} network with Hardhat configuration`,
       });
     } catch (error) {
       console.error("Error connecting to blockchain:", error);
@@ -55,7 +39,7 @@ const BlockchainStatus = () => {
       toast({
         variant: "destructive",
         title: "Connection failed",
-        description: "Failed to connect to blockchain. Please try again.",
+        description: "Failed to connect to blockchain. Using local storage fallback.",
       });
     } finally {
       setLoading(false);
@@ -67,27 +51,8 @@ const BlockchainStatus = () => {
   };
 
   useEffect(() => {
-    // Check for existing connection
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', () => {
-        checkConnection();
-      });
-      
-      window.ethereum.on('chainChanged', () => {
-        checkConnection();
-      });
-      
-      // Initial connection check
-      checkConnection();
-    }
-    
-    return () => {
-      // Clean up listeners
-      if (window.ethereum) {
-        window.ethereum.removeAllListeners('accountsChanged');
-        window.ethereum.removeAllListeners('chainChanged');
-      }
-    };
+    // Initial connection check
+    checkConnection();
   }, []);
 
   return (
@@ -95,7 +60,7 @@ const BlockchainStatus = () => {
       <div className="flex items-center space-x-2">
         <div className={`h-3 w-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
         <span className="text-sm font-medium">
-          {isConnected ? `Connected: ${networkName}` : 'Blockchain Not Connected'}
+          {isConnected ? `Connected: ${networkName}` : 'Using Local Storage (Fallback)'}
         </span>
       </div>
       
@@ -127,7 +92,7 @@ const BlockchainStatus = () => {
               <div className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent"></div>
               <span>Connecting...</span>
             </div>
-          ) : 'Connect to Sepolia'}
+          ) : 'Try Connecting'}
         </Button>
       )}
     </div>
