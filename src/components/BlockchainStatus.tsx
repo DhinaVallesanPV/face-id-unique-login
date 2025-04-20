@@ -38,12 +38,12 @@ const BlockchainStatus = () => {
       } catch (networkError) {
         console.error("Error getting network:", networkError);
         // We got the wallet but couldn't get network info
-        setNetworkName("Unknown");
+        setNetworkName("Local Network");
         setIsConnected(true);
         setIsUsingFallback(true);
         
         toast({
-          variant: "warning",
+          variant: "destructive",
           title: "Partial connection",
           description: "Connected to wallet but network information unavailable. Using hybrid mode.",
         });
@@ -61,10 +61,6 @@ const BlockchainStatus = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getFaucetEth = () => {
-    window.open("https://sepoliafaucet.com/", "_blank");
   };
 
   useEffect(() => {
@@ -105,14 +101,6 @@ const BlockchainStatus = () => {
           <p className="text-xs text-gray-500 truncate max-w-[200px]">
             {walletAddress}
           </p>
-          <Button 
-            size="sm" 
-            variant="outline"
-            className="mt-2 text-xs w-full flex items-center justify-center gap-1"
-            onClick={getFaucetEth}
-          >
-            Get Test ETH <ExternalLink size={12} />
-          </Button>
         </div>
       )}
       

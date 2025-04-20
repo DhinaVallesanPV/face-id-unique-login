@@ -10,14 +10,14 @@ const contractABI = [
   "function userExists(string memory email) public view returns (bool)"
 ];
 
-// Contract address for Sepolia testnet
-const contractAddress = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
+// Contract address for local Hardhat node
+const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Default first address on Hardhat
 
 // Hardhat configuration with private key
 const HARDHAT_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Default Hardhat private key (DO NOT USE IN PRODUCTION)
 
-// Using Alchemy instead of Infura for Sepolia access (more reliable free tier)
-const SEPOLIA_RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/demo"; // Using Alchemy's demo endpoint
+// Local Hardhat node URL
+const LOCAL_RPC_URL = "http://127.0.0.1:8545"; // Standard Hardhat node URL
 
 // Convert face descriptor to a hash string
 export const hashFaceDescriptor = (descriptor: Float32Array): string => {
@@ -32,8 +32,20 @@ export const hashFaceDescriptor = (descriptor: Float32Array): string => {
 // Initialize provider and contract instance using Hardhat configuration
 export const initWeb3 = async () => {
   try {
-    // Create provider using Sepolia RPC URL
-    const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
+    // First attempt local Hardhat node
+    let provider;
+    try {
+      provider = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
+      // Test connection with a simple call
+      await provider.getBlockNumber();
+      console.log("Connected to local Hardhat node");
+    } catch (localError) {
+      console.error("Failed to connect to local Hardhat node:", localError);
+      
+      // Fall back to in-memory provider if local node is unavailable
+      provider = new ethers.JsonRpcProvider(); // In-memory provider
+      console.log("Using in-memory provider as fallback");
+    }
     
     // Create wallet using private key
     const wallet = new ethers.Wallet(HARDHAT_PRIVATE_KEY, provider);
@@ -94,6 +106,12 @@ export const registerUserOnBlockchain = async (email: string, faceDescriptor: Fl
       faceHash,
       registeredOnChain
     };
+    
+    // Check if email already exists to prevent duplicate accounts
+    const emailExists = users.some((user: any) => user.email === email);
+    if (emailExists) {
+      throw new Error("This email is already registered. Please use a different email address.");
+    }
     
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
