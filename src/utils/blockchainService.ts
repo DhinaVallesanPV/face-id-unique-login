@@ -20,9 +20,20 @@ export const initWeb3 = async () => {
     } catch (localError) {
       console.error("Failed to connect to local Hardhat node:", localError);
       
-      // Create a simple in-memory provider for fallback
-      provider = new ethers.InMemoryProvider();
-      console.log("Using in-memory provider as fallback");
+      // Create a fallback provider (in-memory provider doesn't exist in this version)
+      // Use a different fallback strategy - an alternative JSON RPC or a local provider
+      try {
+        // Try creating a basic provider for Ethereum mainnet as a fallback
+        provider = ethers.getDefaultProvider();
+        console.log("Using default provider as fallback");
+      } catch (fallbackError) {
+        console.error("Failed to create fallback provider:", fallbackError);
+        
+        // As a last resort, create a minimal provider that won't actually connect
+        // but will allow the rest of the code to run
+        provider = new ethers.JsonRpcProvider('http://localhost:8545');
+        console.log("Using minimal local provider as last resort");
+      }
     }
     
     // Create wallet using private key
