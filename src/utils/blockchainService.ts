@@ -31,7 +31,9 @@ export const initWeb3 = async () => {
         // As a last resort, create a dummy provider
         // This ensures the app doesn't crash completely
         provider = new ethers.JsonRpcProvider('http://localhost:8545', {
-          staticNetwork: ethers.Network.from("any")
+          // Use valid configuration properties for ethers v6
+          name: "any",
+          chainId: 1337
         });
         console.log("Using minimal provider as last resort - local storage only mode");
       }
