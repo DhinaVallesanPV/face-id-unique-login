@@ -32,24 +32,28 @@ export const registerUserOnBlockchain = async (email: string, faceDescriptor: Fl
     try {
       const { contract } = await initWeb3();
       
-      // First, estimate the gas to check if the transaction might fail
+      // Attempt blockchain registration with proper error handling
       try {
-        const estimatedGas = await contract.registerUser.estimateGas(email, faceHash);
-        console.log("Estimated gas for registration:", estimatedGas);
+        // First check if email already exists on chain
+        const emailExistsOnChain = await contract.userExists(email).catch(() => false);
         
-        // If gas estimation is successful, proceed with transaction
+        if (emailExistsOnChain) {
+          throw new Error("This email is already registered on blockchain.");
+        }
+        
+        // Proceed with registration
         const tx = await contract.registerUser(email, faceHash);
         await tx.wait(); // Wait for transaction to be mined
         
         registeredOnChain = true;
         console.log("Successfully registered on blockchain");
-      } catch (gasError) {
-        console.error("Gas estimation error, using local storage fallback:", gasError);
-        // Continue with local storage
+      } catch (txError) {
+        console.error("Transaction error, using local storage fallback:", txError);
+        // Continue with local storage (fallback)
       }
     } catch (contractError) {
-      console.error("Contract error, using local storage fallback:", contractError);
-      // Continue with local storage
+      console.log("Contract connection error, using local storage fallback:", contractError);
+      // Continue with local storage (fallback)
     }
     
     // Store in localStorage (always do this, whether blockchain worked or not)
@@ -69,6 +73,7 @@ export const registerUserOnBlockchain = async (email: string, faceDescriptor: Fl
     
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
+    console.log("User saved to local storage:", newUser.email);
     
     return true;
   } catch (error) {

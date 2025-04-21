@@ -9,10 +9,10 @@ export const initWeb3 = async () => {
     try {
       provider = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
       
-      // Test connection with a simple call - with timeout
+      // Test connection with a simple call - with shorter timeout
       const connectionPromise = provider.getBlockNumber();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Connection timeout")), 3000)
+        setTimeout(() => reject(new Error("Connection timeout")), 1000)
       );
       
       await Promise.race([connectionPromise, timeoutPromise]);
@@ -20,19 +20,20 @@ export const initWeb3 = async () => {
     } catch (localError) {
       console.error("Failed to connect to local Hardhat node:", localError);
       
-      // Create a fallback provider (in-memory provider doesn't exist in this version)
-      // Use a different fallback strategy - an alternative JSON RPC or a local provider
+      // Create a fallback provider with more resilient configuration
       try {
-        // Try creating a basic provider for Ethereum mainnet as a fallback
+        // Create a default provider as fallback
         provider = ethers.getDefaultProvider();
         console.log("Using default provider as fallback");
       } catch (fallbackError) {
         console.error("Failed to create fallback provider:", fallbackError);
         
-        // As a last resort, create a minimal provider that won't actually connect
-        // but will allow the rest of the code to run
-        provider = new ethers.JsonRpcProvider('http://localhost:8545');
-        console.log("Using minimal local provider as last resort");
+        // As a last resort, create a dummy provider
+        // This ensures the app doesn't crash completely
+        provider = new ethers.JsonRpcProvider('http://localhost:8545', {
+          staticNetwork: ethers.Network.from("any")
+        });
+        console.log("Using minimal provider as last resort - local storage only mode");
       }
     }
     
