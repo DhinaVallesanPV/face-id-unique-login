@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import FaceCapture from "@/components/FaceCapture";
 import { checkFaceExists } from "@/utils/web3Service";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 
 interface FaceRegistrationProps {
   onFaceCapture: (descriptor: Float32Array) => void;
@@ -81,3 +82,4 @@ export const FaceRegistration = ({ onFaceCapture, faceDescriptor }: FaceRegistra
     </div>
   );
 };
+
