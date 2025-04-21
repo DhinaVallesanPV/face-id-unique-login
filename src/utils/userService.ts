@@ -1,4 +1,3 @@
-
 import { hashFaceDescriptor } from './faceHashUtils';
 import { initWeb3 } from './blockchainService';
 
@@ -168,3 +167,7 @@ export const checkFaceExists = async (faceDescriptor: Float32Array) => {
   }
 };
 
+export const clearUserCache = () => {
+  localStorage.removeItem('users');
+  console.log('User cache cleared from localStorage.');
+};
