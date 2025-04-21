@@ -8,14 +8,20 @@ export const initWeb3 = async () => {
     let provider;
     try {
       provider = new ethers.JsonRpcProvider(LOCAL_RPC_URL);
-      // Test connection with a simple call
-      await provider.getBlockNumber();
+      
+      // Test connection with a simple call - with timeout
+      const connectionPromise = provider.getBlockNumber();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Connection timeout")), 3000)
+      );
+      
+      await Promise.race([connectionPromise, timeoutPromise]);
       console.log("Connected to local Hardhat node");
     } catch (localError) {
       console.error("Failed to connect to local Hardhat node:", localError);
       
-      // Fall back to in-memory provider if local node is unavailable
-      provider = new ethers.JsonRpcProvider();
+      // Create a simple in-memory provider for fallback
+      provider = new ethers.InMemoryProvider();
       console.log("Using in-memory provider as fallback");
     }
     
@@ -28,7 +34,6 @@ export const initWeb3 = async () => {
     return { provider, wallet, contract };
   } catch (error) {
     console.error("Error initializing Web3:", error);
-    throw error;
+    throw new Error("Blockchain connection failed. Using local storage fallback.");
   }
 };
-

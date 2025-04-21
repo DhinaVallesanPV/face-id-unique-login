@@ -72,52 +72,57 @@ const FaceCapture = ({ onCapture, onCancel }: FaceCaptureProps) => {
     const intervalId = setInterval(async () => {
       if (!videoRef.current || !canvasRef.current) return;
       
-      const detections = await faceapi.detectSingleFace(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
-      ).withFaceLandmarks().withFaceDescriptor();
-      
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      if (context) context.clearRect(0, 0, canvas.width, canvas.height);
-      
-      if (detections) {
-        setDetectedFace(true);
+      try {
+        const detections = await faceapi.detectSingleFace(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions()
+        ).withFaceLandmarks().withFaceDescriptor();
         
-        // Draw detections
-        const resizedDetections = faceapi.resizeResults(detections, displaySize);
-        faceapi.draw.drawDetections(canvas, resizedDetections);
-        faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-        
-        // Add border and "Face Detected" message
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
         if (context) {
-          context.strokeStyle = 'green';
-          context.lineWidth = 4;
-          context.strokeRect(
-            resizedDetections.detection.box.x,
-            resizedDetections.detection.box.y,
-            resizedDetections.detection.box.width,
-            resizedDetections.detection.box.height
-          );
+          context.clearRect(0, 0, canvas.width, canvas.height);
           
-          context.fillStyle = 'rgba(0, 128, 0, 0.7)';
-          context.fillRect(
-            resizedDetections.detection.box.x,
-            resizedDetections.detection.box.y - 25,
-            120,
-            25
-          );
-          
-          context.fillStyle = 'white';
-          context.font = '16px Arial';
-          context.fillText(
-            'Face Detected',
-            resizedDetections.detection.box.x + 5,
-            resizedDetections.detection.box.y - 5
-          );
+          if (detections) {
+            setDetectedFace(true);
+            
+            // Draw detections
+            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+            faceapi.draw.drawDetections(canvas, resizedDetections);
+            faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+            
+            // Add border and "Face Detected" message
+            context.strokeStyle = 'green';
+            context.lineWidth = 4;
+            context.strokeRect(
+              resizedDetections.detection.box.x,
+              resizedDetections.detection.box.y,
+              resizedDetections.detection.box.width,
+              resizedDetections.detection.box.height
+            );
+            
+            context.fillStyle = 'rgba(0, 128, 0, 0.7)';
+            context.fillRect(
+              resizedDetections.detection.box.x,
+              resizedDetections.detection.box.y - 25,
+              120,
+              25
+            );
+            
+            context.fillStyle = 'white';
+            context.font = '16px Arial';
+            context.fillText(
+              'Face Detected',
+              resizedDetections.detection.box.x + 5,
+              resizedDetections.detection.box.y - 5
+            );
+          } else {
+            setDetectedFace(false);
+          }
         }
-      } else {
-        setDetectedFace(false);
+      } catch (err) {
+        console.error("Error during face detection:", err);
+        // Don't set error here to avoid constant error messages
       }
     }, 100);
     

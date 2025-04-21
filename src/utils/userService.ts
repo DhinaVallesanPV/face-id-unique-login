@@ -33,18 +33,23 @@ export const registerUserOnBlockchain = async (email: string, faceDescriptor: Fl
       const { contract } = await initWeb3();
       
       // First, estimate the gas to check if the transaction might fail
-      const estimatedGas = await contract.registerUser.estimateGas(email, faceHash);
-      console.log("Estimated gas for registration:", estimatedGas);
-      
-      // If gas estimation is successful, proceed with transaction
-      const tx = await contract.registerUser(email, faceHash);
-      await tx.wait(); // Wait for transaction to be mined
-      
-      registeredOnChain = true;
-      console.log("Successfully registered on blockchain");
-    } catch (contractError: any) {
+      try {
+        const estimatedGas = await contract.registerUser.estimateGas(email, faceHash);
+        console.log("Estimated gas for registration:", estimatedGas);
+        
+        // If gas estimation is successful, proceed with transaction
+        const tx = await contract.registerUser(email, faceHash);
+        await tx.wait(); // Wait for transaction to be mined
+        
+        registeredOnChain = true;
+        console.log("Successfully registered on blockchain");
+      } catch (gasError) {
+        console.error("Gas estimation error, using local storage fallback:", gasError);
+        // Continue with local storage
+      }
+    } catch (contractError) {
       console.error("Contract error, using local storage fallback:", contractError);
-      registeredOnChain = false;
+      // Continue with local storage
     }
     
     // Store in localStorage (always do this, whether blockchain worked or not)
